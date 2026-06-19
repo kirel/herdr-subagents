@@ -242,16 +242,12 @@ export default function herdrSubagents(pi: ExtensionAPI) {
       placement: Type.Optional(PlacementEnum),
       direction: Type.Optional(DirectionEnum),
       sessionId: Type.Optional(Type.String({ description: "Pi session id/path key for the child agent. Defaults to a stable id derived from the agent name." })),
-      model: Type.Optional(Type.String({ description: "Pi model pattern or ID for the child agent, e.g. 'openai/gpt-4o' or 'sonnet:high'. Cannot be combined with piCommand." })),
-      piCommand: Type.Optional(Type.String({ description: "Base Pi command. Defaults to 'pi --session <sessionFile> -e <childExtension> @<taskFile>'. Advanced override; cannot be combined with model." })),
+      model: Type.Optional(Type.String({ description: "Pi model pattern or ID for the child agent, e.g. 'openai/gpt-4o' or 'sonnet:high'. Added to the generated command or appended to piCommand when provided." })),
+      piCommand: Type.Optional(Type.String({ description: "Base Pi command. Defaults to 'pi --session <sessionFile> -e <childExtension> @<taskFile>'. Use only for advanced overrides." })),
       completionTimeoutMs: Type.Optional(Type.Number({ description: "How long the background watcher waits for herdr_subagent_done. Defaults to 1800000." })),
       deliverAs: Type.Optional(DeliveryEnum),
     }),
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
-      if (params.model && params.piCommand) {
-        throw new Error("herdr_subagent: model cannot be combined with piCommand; include --model in piCommand or omit piCommand.");
-      }
-
       const name = safeName(params.name);
       const cwd = params.cwd || ctx.cwd;
       const placement = (params.placement || "pane") as Placement;
@@ -280,8 +276,9 @@ export default function herdrSubagents(pi: ExtensionAPI) {
         `HERDR_SUBAGENT_EXIT_FILE=${shellQuote(exitFile)}`,
       ].join(" ");
       const modelArgs = params.model ? ` --model ${shellQuote(params.model)}` : "";
-      const defaultCommand = `${envPrefix} pi${modelArgs} --session ${shellQuote(sessionFile)} -e ${shellQuote(childExtensionPath())} @${shellQuote(taskFile)}`;
-      const command = params.piCommand || defaultCommand;
+      const defaultCommand = `pi --session ${shellQuote(sessionFile)} -e ${shellQuote(childExtensionPath())} @${shellQuote(taskFile)}`;
+      const piCommand = params.piCommand || defaultCommand;
+      const command = `${envPrefix} ${piCommand}${modelArgs}`;
       await execHerdr(["pane", "run", paneId, command], signal);
 
       startCompletionWatcher({ name, paneId, placement, sessionId, sessionFile, exitFile, timeoutMs: completionTimeoutMs, deliverAs });

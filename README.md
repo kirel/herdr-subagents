@@ -40,7 +40,7 @@ The `herdr_subagent` tool accepts an optional `model` parameter for the child Pi
 - `openai/gpt-4o`
 - `anthropic/claude-sonnet-4-5`
 
-When `model` is set, the generated child command includes `--model <model>`. The advanced `piCommand` override owns the full command, so `model` and `piCommand` cannot be used together.
+When `model` is set, the child command includes `--model <model>`. If you also provide the advanced `piCommand` override, the model flag is appended to that command so you can still use `piCommand` for other Pi options.
 
 ## Child pane stays open
 
