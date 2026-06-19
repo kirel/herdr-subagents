@@ -242,6 +242,7 @@ export default function herdrSubagents(pi: ExtensionAPI) {
       placement: Type.Optional(PlacementEnum),
       direction: Type.Optional(DirectionEnum),
       sessionId: Type.Optional(Type.String({ description: "Pi session id/path key for the child agent. Defaults to a stable id derived from the agent name." })),
+      model: Type.Optional(Type.String({ description: "Pi model pattern or ID for the child agent, e.g. 'openai/gpt-4o' or 'sonnet:high'. Added to the generated command or appended to piCommand when provided." })),
       piCommand: Type.Optional(Type.String({ description: "Base Pi command. Defaults to 'pi --session <sessionFile> -e <childExtension> @<taskFile>'. Use only for advanced overrides." })),
       completionTimeoutMs: Type.Optional(Type.Number({ description: "How long the background watcher waits for herdr_subagent_done. Defaults to 1800000." })),
       deliverAs: Type.Optional(DeliveryEnum),
@@ -274,8 +275,10 @@ export default function herdrSubagents(pi: ExtensionAPI) {
         `HERDR_SUBAGENT_NAME=${shellQuote(name)}`,
         `HERDR_SUBAGENT_EXIT_FILE=${shellQuote(exitFile)}`,
       ].join(" ");
-      const defaultCommand = `${envPrefix} pi --session ${shellQuote(sessionFile)} -e ${shellQuote(childExtensionPath())} @${shellQuote(taskFile)}`;
-      const command = params.piCommand || defaultCommand;
+      const modelArgs = params.model ? ` --model ${shellQuote(params.model)}` : "";
+      const defaultCommand = `pi --session ${shellQuote(sessionFile)} -e ${shellQuote(childExtensionPath())} @${shellQuote(taskFile)}`;
+      const piCommand = params.piCommand || defaultCommand;
+      const command = `${envPrefix} ${piCommand}${modelArgs}`;
       await execHerdr(["pane", "run", paneId, command], signal);
 
       startCompletionWatcher({ name, paneId, placement, sessionId, sessionFile, exitFile, timeoutMs: completionTimeoutMs, deliverAs });
@@ -294,6 +297,7 @@ export default function herdrSubagents(pi: ExtensionAPI) {
           sessionFile,
           exitFile,
           taskFile,
+          model: params.model,
           completionTimeoutMs,
           deliverAs,
         },
