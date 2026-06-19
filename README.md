@@ -32,6 +32,16 @@ Just ask pi:
 
 The agent handles placement, session management, and the completion callback automatically.
 
+## Choose a child model
+
+The `herdr_subagent` tool accepts an optional `model` parameter for the child Pi process. It uses the same model pattern syntax as Pi's `--model` flag, for example:
+
+- `sonnet:high`
+- `openai/gpt-4o`
+- `anthropic/claude-sonnet-4-5`
+
+When `model` is set, the generated child command includes `--model <model>`. The advanced `piCommand` override owns the full command, so `model` and `piCommand` cannot be used together.
+
 ## Child pane stays open
 
 After the subagent reports back, its Herdr pane remains open. You can:
